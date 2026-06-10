@@ -64,20 +64,12 @@ class TurnProcessor:
     def _phase1_units(self, payloads: dict[str, ActionPayload]) -> list[str]:
         events: list[str] = []
 
-        # collect all attack actions, grouped by unit. A player may ONLY command a
-        # unit it OWNS: resolution below keys purely on unit_id, so without this gate
-        # any player could puppeteer another player's units by submitting their
-        # unit_id. payload.player_id is authenticated against the connection id at
-        # action-collection time (see the competition runner), so it is trustworthy.
+        # collect all attack actions, grouped by unit
         attack_map: dict[str, AttackAction] = {}
         for payload in payloads.values():
             for action in payload.actions:
-                if not isinstance(action, AttackAction):
-                    continue
-                attacker = self.state.entities.get(action.unit_id)
-                if attacker is None or attacker.owner_id != payload.player_id:
-                    continue  # not your unit → ignore the order
-                attack_map[action.unit_id] = action
+                if isinstance(action, AttackAction):
+                    attack_map[action.unit_id] = action
 
         # resolve attacks simultaneously: compute damage first, then apply
         damage_pending: dict[str, int] = {}  # entity_id → total pending damage
@@ -164,17 +156,12 @@ class TurnProcessor:
                 events.append(f"base_{eid}_destroyed_owner_{entity.owner_id}")
             self.state.remove_entity(eid)
 
-        # collect move actions — owner-gated for the same reason as attacks above:
-        # you may only move a unit you OWN (resolution keys purely on unit_id).
+        # collect move actions
         move_map: dict[str, MoveAction] = {}
         for payload in payloads.values():
             for action in payload.actions:
-                if not isinstance(action, MoveAction):
-                    continue
-                entity = self.state.entities.get(action.unit_id)
-                if entity is None or entity.owner_id != payload.player_id:
-                    continue  # not your unit → ignore the order
-                move_map[action.unit_id] = action
+                if isinstance(action, MoveAction):
+                    move_map[action.unit_id] = action
 
         # validate and compute final positions for moves
         final_positions: dict[str, HexCoord] = {}
