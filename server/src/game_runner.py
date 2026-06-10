@@ -315,7 +315,15 @@ class GameRunner:
                     timeout=self.config.response_timeout,
                 )
                 resp.raise_for_status()
-                return pid, payload_from_dict(resp.json())
+                payload = payload_from_dict(resp.json())
+                if payload.player_id != pid:
+                    log.warning(
+                        "player %s returned payload claiming to be %s — discarding",
+                        pid,
+                        payload.player_id,
+                    )
+                    return pid, None
+                return pid, payload
             except Exception as exc:
                 log.warning("player %s failed to respond: %s", pid, exc)
                 return pid, None

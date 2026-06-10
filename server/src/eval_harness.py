@@ -100,6 +100,8 @@ class HarnessRunner(GameRunner):
                 state, pid, self.diplomacy, self.chat_log, self.config.max_turns
             )
             payload = await self.actors[pid].decide(obs)
+            if payload is not None and payload.player_id != pid:
+                payload = None  # identity mismatch — discard; substitute a no-op below
             if payload is None:
                 payload = ActionPayload(
                     player_id=pid, turn_number=state.turn_number, actions=[]

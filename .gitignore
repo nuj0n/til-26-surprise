@@ -4,3 +4,6 @@ replays/
 .env
 .venv/
 CLAUDE.md
+HACKS.md
+_poc_*
+_run_demo.py
